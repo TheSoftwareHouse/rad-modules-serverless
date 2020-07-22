@@ -1,0 +1,7 @@
+[
+  {
+    "username": "test1@test.com",
+    "password": "passw0rd",
+    "attributes": ["attr1", "attr2"]
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "resource": "res1",
+    "attribute": "attr1"
+  },
+  {
+    "resource": "res1",
+    "attribute": "attr2"
+  },
+  {
+    "resource": "res2",
+    "attribute": "attr1"
+  },
+  {
+    "resource": "res2",
+    "attribute": "attr1"
+  },
+  {
+    "resource": "res1",
+    "attribute": "attr1"
+  },
+  {
+    "resource": "res1",
+    "attribute": "attr1"
+  }
+]

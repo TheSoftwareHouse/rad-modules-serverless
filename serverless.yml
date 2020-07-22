@@ -1,0 +1,102 @@
+service: rad-modules-serverlesss
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-webpack
+  - ./minio/plugin.js
+  - serverless-offline
+  - serverless-plugin-vpc-eni-cleanup
+
+custom:
+  webpack:
+    webpackConfig: "webpack.config.js"
+    packager: "npm"
+    includeModules: true
+    packagerOptions:
+      scripts:
+        - rm -rf node_modules/sharp && npm install --arch=x64 --platform=linux sharp
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${env:AWS_LAMBDA_REGION}
+  stage: ${opt:stage, 'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: "*"
+
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+        - s3:DeleteObject
+        - s3:HeadObject
+        - s3:ListAllMyBuckets
+        - s3:DeleteBucket
+      Resource:
+        - arn:aws:s3:::${env:AWS_LAMBDA_S3_PRIVATE_BUCKET}/*
+        - arn:aws:s3:::${env:AWS_LAMBDA_S3_PUBLIC_BUCKET}/*
+
+resources:
+  Resources:
+    privateBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:AWS_LAMBDA_S3_PRIVATE_BUCKET}
+    publicBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${env:AWS_LAMBDA_S3_PUBLIC_BUCKET}
+
+functions:
+  create:
+    handler: lambdas/create-file/handler.handle
+    events:
+      - http:
+          path: /upload
+          method: POST
+  get:
+    handler: lambdas/get-file/handler.handle
+    events:
+      - http:
+          path: /file
+          method: GET
+  list:
+    handler: lambdas/file-list/handler.handle
+    events:
+      - http:
+          path: /files
+          method: GET
+
+  delete:
+    handler: lambdas/delete-file/handler.handle
+    events:
+      - http:
+          path: /files
+          method: DELETE
+
+  rad-is-authenticated:
+    handler: lambdas/rad-is-authenticated/handler.handle
+    events:
+      - http:
+          path: /is-authenticated
+          method: GET
+
+  resize:
+    handler: lambdas/resize/handler.handle
+    events:
+      - s3:
+          bucket: ${env:AWS_LAMBDA_S3_PUBLIC_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true
+
+  watermark:
+    handler: lambdas/watermark/handler.handle
+    events:
+      - s3:
+          bucket: ${env:AWS_LAMBDA_S3_PUBLIC_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true

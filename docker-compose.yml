@@ -1,0 +1,52 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:12-alpine
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USERNAME: postgres
+      POSTGRES_DB: app
+    ports:
+      - 5432:5432
+
+  minio:
+    build:
+      context: minio
+      dockerfile: Dockerfile
+    container_name: rad_minio
+    ports:
+      - 9000:9000
+    environment:
+      - MINIO_ACCESS_KEY=s3accesskey
+      - MINIO_SECRET_KEY=s3secret
+      - MINIO_DOMAIN=localhost
+    entrypoint: sh
+    command: -c 'mkdir -p /export/test && /usr/bin/minio server --address :9000 /export && mc policy set public export/test'
+
+  security:
+    image: tshio/security:0.0.55
+    working_dir: /app/build/services/security
+    command: api
+    hostname: security
+    ports:
+      - 50050:50050
+    volumes:
+      - ./security/initial-data /app/services/security/init-data-volume
+    environment:
+      ACCESS_TOKEN_EXPIRATION: 10000
+      REFRESH_TOKEN_SECRET: 15000
+      CONNECTION_STRING: postgres://postgres:password@security-postgres:5432/users
+    depends_on:
+      - security-postgres
+      - redis
+
+  security-postgres:
+    image: postgres:10-alpine
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USERNAME: postgres
+      POSTGRES_DB: users
+
+  redis:
+    image: redis:4-alpine
+    hostname: redis
