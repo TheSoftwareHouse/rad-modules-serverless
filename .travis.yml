@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+  - 12
+services:
+  - docker
+jobs:
+  include:
+    - stage: Default
+      script:
+        - docker-compose up -d
+        - npm install
+        - npm run lint
+        - cp .env.dist .env
+        - npm run knex:migrate:latest
+        - sh ./ci/start-offline.sh
+        - npm run tests
+        - sh ./ci/stop-offline.sh
